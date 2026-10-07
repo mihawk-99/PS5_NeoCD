@@ -57,7 +57,19 @@ ifeq ($(STATIC_LINKING), 1)
 EXT := a
 endif
 
-ifneq (,$(findstring unix,$(platform)))
+# PS5 (a homebrew title's libretro core): the console's libraries resolve at
+# load time, so no --no-undefined; no LTO; zstd without its trace hooks, weak
+# imports nothing on the console defines.
+ifeq ($(platform), ps5)
+   TARGET := $(TARGET_NAME)_libretro.so
+   fpic := -fPIC
+   SHARED := -shared -Wl,--version-script=$(CORE_DIR)/link.T
+   FLAGS += -DZSTD_TRACE=0
+   CFLAGS += -DZSTD_TRACE=0
+   CXXFLAGS += -DZSTD_TRACE=0
+   LTO =
+   USE_LTO := 0
+else ifneq (,$(findstring unix,$(platform)))
 	EXT ?= so
    TARGET := $(TARGET_NAME)_libretro.$(EXT)
    fpic := -fPIC
